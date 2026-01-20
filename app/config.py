@@ -14,8 +14,9 @@ class Settings(BaseSettings):
     openweather_api_key: str = Field(f"{os.getenv('openweather_api_key', '')}")
     mongo_uri: str = Field(f"{os.getenv('mongo_uri', 'mongodb://localhost:27017')}")
     mongo_db: str = Field(f"{os.getenv('mongo_db', 'weather_health_db')}")
-    ollama_base_url: str = Field(f"({os.getenv('ollama_base_url', 'http://localhost:11434')})")
-    ollama_model: str = Field(f"{os.getenv('ollama_model', 'phi4-mini')}")
+    # Base URL for local Ollama server (no stray parentheses)
+    ollama_base_url: str = Field(f"{os.getenv('ollama_base_url', 'http://localhost:11434')}" )
+    ollama_model: str = Field(f"{os.getenv('ollama_model', 'llama3.1:8b')}")
 
 
 _settings: Settings | None = None
