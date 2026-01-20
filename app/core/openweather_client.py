@@ -24,11 +24,13 @@ async def get_coords_for_city(city: str) -> Location:
     url = "https://api.openweathermap.org/geo/1.0/direct"
     params = {"q": city, "limit": 1, "appid": settings.openweather_api_key}
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.get(url, params=params)
-
     try:
-        resp.raise_for_status()
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(url, params=params)
+            resp.raise_for_status()
+    except httpx.RequestError as e:
+        # Network/DNS/timeout errors
+        raise HTTPException(status_code=502, detail=f"Error connecting to OpenWeather geocoding: {e}")
     except httpx.HTTPStatusError as e:
         raise HTTPException(
             status_code=502,
@@ -86,12 +88,16 @@ async def fetch_weather_and_air(lat: float, lon: float) -> Tuple[dict, dict]:
         "appid": settings.openweather_api_key,
     }
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        current_resp, forecast_resp, air_resp = await asyncio.gather(
-            client.get(current_url, params=current_params),
-            client.get(forecast_url, params=forecast_params),
-            client.get(air_url, params=air_params),
-        )
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            current_resp, forecast_resp, air_resp = await asyncio.gather(
+                client.get(current_url, params=current_params),
+                client.get(forecast_url, params=forecast_params),
+                client.get(air_url, params=air_params),
+            )
+    except httpx.RequestError as e:
+        # Network/DNS/timeout errors
+        raise HTTPException(status_code=502, detail=f"Error connecting to OpenWeather APIs: {e}")
 
     # Raise errors with some detail if anything failed
     try:
