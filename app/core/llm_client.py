@@ -125,10 +125,19 @@ async def call_ollama_for_explanation(
         "stream": False,
     }
 
-    async with httpx.AsyncClient(timeout=60) as client:
-        resp = await client.post(f"{settings.ollama_base_url}/api/chat", json=payload)
-        resp.raise_for_status()
-        data = resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(f"{settings.ollama_base_url}/api/chat", json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+    except (httpx.RequestError, httpx.HTTPStatusError) as e:
+        # Fallback when Ollama is unreachable or returns an error
+        return LLMExplanation(
+            summary="Explanation temporarily unavailable.",
+            details=f"LLM service error: {e}",
+            actions=[],
+            profile_specific_note="",
+        )
 
     content = data.get("message", {}).get("content", "") or ""
     content = _strip_code_fences(content)
