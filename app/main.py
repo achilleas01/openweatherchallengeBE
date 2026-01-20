@@ -336,7 +336,12 @@ async def health_risk(
     "checklist": [item.dict() for item in response.checklist],
     }
 
-    await db["risk_logs"].insert_one(log_doc)
+    # Best-effort logging; don't fail the request if MongoDB is unreachable
+    try:
+        await db["risk_logs"].insert_one(log_doc)
+    except Exception as e:
+        # Optionally log; keep silent to avoid leaking internals
+        pass
 
     return response
 
